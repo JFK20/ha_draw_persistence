@@ -1,13 +1,16 @@
 from homeassistant.helpers.http import HomeAssistantView
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.core import HomeAssistant
+import logging
 
 DOMAIN = "ha_draw_persistence"
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up File Upload."""
-    hass.http.register_view(FileUploadView)
+    _LOGGER = logging.getLogger("ha_draw_persistence")
+    _LOGGER.info("File Upload view registered")
+    print(allowed_file("tldraw.json"))
     return True
 
 
@@ -20,14 +23,3 @@ def allowed_file(filename):
     """
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-class FileUploadView(HomeAssistantView):
-    """HTTP View to upload files."""
-
-    url = "/api/file_upload"
-    name = "api:file_upload"
-
-    print("FileUploadView")
-
-    print(allowed_file("tldraw.json"))
