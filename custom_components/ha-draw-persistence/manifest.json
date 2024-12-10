@@ -6,8 +6,8 @@
   "documentation": "https://www.example.com",
   "integration_type": "service",
   "iot_class": "local_push",
-  "requirements": [],
+  "requirements": ["flask", "flask_cors"],
   "version": "0.0.1",
-  "issue_tracker": "https://github.com/JFK20/ha-draw-persistence/issues",
+  "issue_tracker": "https://github.com/JFK20/ha-draw-persistence/issues"
 }
 
