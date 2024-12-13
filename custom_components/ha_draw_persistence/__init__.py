@@ -2,6 +2,7 @@
 Custom component for file upload in Home Assistant
 Place this in your custom_components/ha_draw_persistence/ directory
 """
+import json
 import os
 import logging
 import voluptuous as vol
@@ -31,54 +32,79 @@ async def async_setup(hass, config):
     conf = config.get(DOMAIN, {})
     upload_directory = conf.get('upload_directory')
     name = conf.get(CONF_NAME, 'File Upload')
-    allowed_extensions = conf.get('allowed_extensions', ['json'])
 
     # Ensure upload directory exists
     os.makedirs(upload_directory, exist_ok=True)
 
     # Create a view for file uploads
-    class FileUploadView(HomeAssistantView):
-        """Handle file uploads via Home Assistant API."""
+    class JSONPersistenceView(HomeAssistantView):
+        """Handle JSON persistence via Home Assistant API."""
 
         url = f'/api/{DOMAIN}/upload'
-        name = 'api:file_upload'
+        name = 'api:json_data_upload'
         requires_auth = True  # This ensures authentication is required
 
         async def post(self, request):
-            """Handle file upload."""
+            """Handle JSON upload."""
             try:
                 # Ensure proper authentication
                 hass = request.app['hass']
 
                 # Read multipart data
                 data = await request.post()
-                uploaded_file = data.get('file')
+                json_data = data.get("jsondata")
 
-                if not uploaded_file:
-                    return self.json_message('No file uploaded', status_code=400)
+                if not json_data:
+                    return self.json_message('No json send', status_code=400)
 
-                # Check file extension
-                file_ext = uploaded_file.filename.split('.')[-1].lower()
-                if file_ext not in allowed_extensions:
-                    return self.json_message(f'File type not allowed. Allowed: {allowed_extensions}', status_code=400)
+                try:
+                    # Attempt to parse to ensure it's valid JSON
+                    json.loads(json_data)
+                except json.JSONDecodeError:
+                    return self.json_message('Invalid JSON format', status_code=400)
 
-                # Generate unique filename
-                unique_filename = f"{uuid.uuid4()}_{uploaded_file.filename}"
-                file_path = os.path.join(upload_directory, unique_filename)
+                file_path = os.path.join(upload_directory, "tldraw_persistence.json")
 
                 # Save file
-                async with aiofiles.open(file_path, 'wb') as f:
-                    await f.write(uploaded_file.file.read())
+                async with aiofiles.open(file_path, 'w') as f:
+                    await f.write(json_data)
 
-                _LOGGER.info(f"File uploaded successfully: {unique_filename}")
-                return self.json_message(f'File {unique_filename} uploaded successfully')
+                _LOGGER.info(f"successfully wrote Json Data: {json_data[:15]}")
+                return self.json_message(f'Json Data {json_data[:15]} written successfully')
 
             except Exception as e:
-                _LOGGER.error(f"File upload error: {e}")
+                _LOGGER.error(f"Json Data error: {e}")
                 return self.json_message('Upload failed', status_code=500)
 
+
+        async def get(self, request):
+            """Handle JSON retrieval."""
+            try:
+                file_path = os.path.join(upload_directory, "tldraw_persistence.json")
+
+                # Check if file exists
+                if not os.path.exists(file_path):
+                    return self.json_message('No saved data', status_code=404)
+
+                # Read file asynchronously
+                async with aiofiles.open(file_path, 'r') as f:
+                    json_data = await f.read()
+
+                # Validate JSON before returning
+                try:
+                    json.loads(json_data)
+                except json.JSONDecodeError:
+                    return self.json_message('Stored data is not valid JSON', status_code=500)
+
+                # Return JSON directly
+                return self.json(json.loads(json_data))
+
+            except Exception as e:
+                _LOGGER.error(f"JSON Data read error: {e}", exc_info=True)
+                return self.json_message('Retrieval failed', status_code=500)
+
     # Register the view
-    hass.http.register_view(FileUploadView())
+    hass.http.register_view(JSONPersistenceView())
 
     return True
 
