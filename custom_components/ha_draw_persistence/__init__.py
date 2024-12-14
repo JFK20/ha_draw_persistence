@@ -40,7 +40,7 @@ async def async_setup(hass, config):
     class JSONPersistenceView(HomeAssistantView):
         """Handle JSON persistence via Home Assistant API."""
 
-        url = f'/api/{DOMAIN}/upload'
+        url = f'/api/ha_draw_persistence/upload'
         name = 'api:json_data_upload'
         requires_auth = True  # This ensures authentication is required
 
