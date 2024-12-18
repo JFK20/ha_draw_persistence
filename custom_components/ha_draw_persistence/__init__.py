@@ -52,7 +52,7 @@ async def async_setup(hass, config):
                 # Read multipart data
                 data = await request.post()
                 json_data = data.get("jsondata")
-                file_name = json_data.get("filename")
+                file_name = data.get("filename")
 
                 if not(file_name):
                     return self.json_message("No File Name Provided", status_code=400)
@@ -82,10 +82,10 @@ async def async_setup(hass, config):
 
         async def get(self, request):
             """Handle JSON retrieval."""
-            file_name = request.match_info.get('filename')
-
+            hass = request.app['hass']
 
             try:
+                file_name = request.query.get('filename', 'default')
                 file_path = os.path.join(upload_directory, f"tldraw_persistence_{file_name}.json")
 
                 # Check if file exists
