@@ -7,7 +7,6 @@ import os
 import logging
 import voluptuous as vol
 import aiofiles
-import uuid
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.const import CONF_NAME
@@ -53,6 +52,10 @@ async def async_setup(hass, config):
                 # Read multipart data
                 data = await request.post()
                 json_data = data.get("jsondata")
+                file_name = json_data.get("filename")
+
+                if not(file_name):
+                    return self.json_message("No File Name Provided", status_code=400)
 
                 if not json_data:
                     return self.json_message('No json send', status_code=400)
@@ -63,7 +66,7 @@ async def async_setup(hass, config):
                 except json.JSONDecodeError:
                     return self.json_message('Invalid JSON format', status_code=400)
 
-                file_path = os.path.join(upload_directory, "tldraw_persistence.json")
+                file_path = os.path.join(upload_directory, f"tldraw_persistence_{file_name}.json")
 
                 # Save file
                 async with aiofiles.open(file_path, 'w') as f:
@@ -79,8 +82,11 @@ async def async_setup(hass, config):
 
         async def get(self, request):
             """Handle JSON retrieval."""
+            file_name = request.match_info.get('filename')
+
+
             try:
-                file_path = os.path.join(upload_directory, "tldraw_persistence.json")
+                file_path = os.path.join(upload_directory, f"tldraw_persistence_{file_name}.json")
 
                 # Check if file exists
                 if not os.path.exists(file_path):
