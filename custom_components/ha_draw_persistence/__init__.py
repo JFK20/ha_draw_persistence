@@ -53,12 +53,16 @@ async def async_setup(hass, config):
                 data = await request.post()
                 json_data = data.get("jsondata")
                 file_name = data.get("filename")
+                user_name = data.get("user")
 
-                if not(file_name):
+                if not file_name:
                     return self.json_message("No File Name Provided", status_code=400)
 
                 if not json_data:
                     return self.json_message('No json send', status_code=400)
+
+                if not user_name:
+                    return self.json_message('No User Name Provided', status_code=400)
 
                 try:
                     # Attempt to parse to ensure it's valid JSON
@@ -66,7 +70,10 @@ async def async_setup(hass, config):
                 except json.JSONDecodeError:
                     return self.json_message('Invalid JSON format', status_code=400)
 
-                file_path = os.path.join(upload_directory, f"tldraw_persistence_{file_name}.json")
+                user_directory = os.path.join(upload_directory, user_name)
+                os.makedirs(user_directory, exist_ok=True)
+
+                file_path = os.path.join(f"{user_directory}", f"tldraw_persistence_{file_name}.json")
 
                 # Save file
                 async with aiofiles.open(file_path, 'w') as f:
@@ -86,7 +93,16 @@ async def async_setup(hass, config):
 
             try:
                 file_name = request.query.get('filename', 'default')
-                file_path = os.path.join(upload_directory, f"tldraw_persistence_{file_name}.json")
+                user_name = request.query.get('user', 'default')
+
+                if not user_name:
+                    return self.json_message("No User Name Provided", status_code=400)
+
+                if not file_name:
+                    return self.json_message("No File Name Provided", status_code=400)
+
+                user_directory = os.path.join(upload_directory, user_name)
+                file_path = os.path.join(f"{user_directory}", f"tldraw_persistence_{file_name}.json")
 
                 # Check if file exists
                 if not os.path.exists(file_path):
