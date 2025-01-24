@@ -2,12 +2,10 @@
 Custom component for file upload in Home Assistant
 Place this in your custom_components/ha_draw_persistence/ directory
 """
-import json
 import os
 import logging
-import aiofiles
-from homeassistant.components.http import HomeAssistantView
 
+from custom_components.ha_draw_persistence.FileView import FileView
 from custom_components.ha_draw_persistence.PersistenceView import PersistenceView
 
 DOMAIN = "ha_draw_persistence"
@@ -32,5 +30,7 @@ async def async_setup(hass, config):
 
     # Register the view
     hass.http.register_view(PersistenceView(upload_directory))
+
+    hass.http.register_view(FileView(upload_directory))
 
     return True

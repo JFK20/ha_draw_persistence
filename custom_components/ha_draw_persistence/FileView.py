@@ -18,11 +18,9 @@ class FileView(HomeAssistantView):
         self.upload_directory = upload_directory
 
     async def get(self, request):
-        """"Handels getting all the file names"""
+        """Handels getting all the file names"""
 
         hass = request.app['hass']
-
-        fileNames = []
 
         try:
             user_name = request.query.get('user', 'default')
